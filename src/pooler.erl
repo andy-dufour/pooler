@@ -466,7 +466,7 @@ reply_to_queued_requestor(TRef, Pid, From = {APid, _}, NewQueuedRequestors, Pool
     send_metric(Pool, events, error_no_members, history),
     gen_server:reply(From, Pid),
     Pool1.
-    
+
 
 -spec take_member_bookkeeping(pid(),
                               {pid(), _},
@@ -843,6 +843,12 @@ send_metric(#pool{name = PoolName, metrics_mod = MetricsMod,
                    metrics_api = exometer}, Label, Value, Type) ->
     MetricName = pool_metric_exometer(PoolName, Label),
     MetricsMod:update_or_create(MetricName, Value, Type, []),
+    ok;
+%folsom API is the default one. We want to support customized histogram sample types.
+send_metric(#pool{name = PoolName, metrics_mod = MetricsMod, metrics_api = folsom},
+                   Label, Value, histogram) ->
+    MetricName = pool_metric(PoolName, Label),
+    MetricsMod:notify(MetricName, Value, {histogram, slide}),
     ok;
 %folsom API is the default one.
 send_metric(#pool{name = PoolName, metrics_mod = MetricsMod, metrics_api = folsom},
